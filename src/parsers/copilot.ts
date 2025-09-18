@@ -15,27 +15,49 @@ export function buildAgentModel(
   function classifyComponent(c: any) {
     const schema = (c.schemaname || '').toLowerCase();
     const componentType = c.componenttype;
+    const name = (c.name || '').toLowerCase();
     
-    // Based on schema patterns and component types
+    // Skip agent definition components entirely
+    if (schema.includes('msdyn_appcopilot') || 
+        schema.includes('.agent.') || 
+        schema.includes('bot.') ||
+        name.includes('copilot') ||
+        name.includes('agent')) {
+      return 'skip'; // Don't classify agent-related components
+    }
+    
+    // More specific classification based on actual schema patterns
     if (schema.includes('.topic.') || componentType === 10) {
       return 'topic';
     }
-    if (schema.includes('.knowledgesource') || schema.includes('.knowledge') || schema.includes('datasource') ||
-        componentType === 15 || componentType === 16) {
+    
+    // Only classify as knowledge if it's specifically a knowledge source
+    if ((schema.includes('.knowledgesource') || schema.includes('.datasource') || 
+         schema.includes('.knowledge.') || schema.includes('sharepoint') || 
+         schema.includes('website') || schema.includes('file') ||
+         schema.includes('document')) && 
+        !schema.includes('.agent.') && !schema.includes('msdyn_appcopilot')) {
       return 'knowledge';
     }
-    if (schema.includes('.action') || schema.includes('.plugin') || schema.includes('.flow')) {
+    
+    if (schema.includes('.action') || schema.includes('.plugin') || schema.includes('.flow') ||
+        schema.includes('connector') || componentType === 20) {
       return 'action';
     }
+    
     if (schema.includes('.channel')) {
       return 'channel';
     }
+    
     if (schema.includes('.agent') || schema.includes('.handoff')) {
       return 'agent';
     }
     
-    // Log unclassified for debugging
-    console.log(`Unclassified component: type=${componentType}, schema=${schema}, name=${c.name}`);
+    // Log unclassified for debugging - but exclude the main agent components
+    if (!schema.includes('msdyn_appcopilot') && !schema.includes('.agent.') && !name.includes('copilot')) {
+      console.log(`Unclassified component: type=${componentType}, schema=${schema}, name=${c.name}`);
+    }
+    
     return 'unknown';
   }
 
@@ -72,6 +94,12 @@ export function buildAgentModel(
 
   for (const c of components) {
     const type = classifyComponent(c);
+    
+    // Skip agent-related components entirely
+    if (type === 'skip') {
+      continue;
+    }
+    
     if (type === 'topic') {
       topics.push({ id: c.botcomponentid, name: c.name, triggers: [], variables: [], edges: [], uses: [] });
     } else if (type === 'knowledge') {

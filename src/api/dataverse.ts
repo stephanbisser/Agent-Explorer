@@ -37,20 +37,27 @@ export async function listBotComponents(orgApiUrl: string, token: string, botId:
         });
       }
     });
-    typeMap.forEach(v => console.log(`Type ${v.componenttype}: ${v.schemaname} (data: ${v.hasData}, content: ${v.hasContent})`));
+    typeMap.forEach(v => console.log(`Type ${v.componenttype}: ${v.schemaname} - "${v.name}" (data: ${v.hasData}, content: ${v.hasContent})`));
     
-    // Log knowledge source details for URL extraction
-    const knowledgeSources = data.value.filter(c => 
-      (c.schemaname || '').toLowerCase().includes('knowledge') ||
-      (c.schemaname || '').toLowerCase().includes('datasource') ||
-      c.componenttype === 15 || c.componenttype === 16 // common knowledge source types
+    // Log potential knowledge sources for URL extraction
+    const potentialKnowledge = data.value.filter(c => 
+      (c.schemaname && (
+        c.schemaname.toLowerCase().includes('knowledge') ||
+        c.schemaname.toLowerCase().includes('datasource') ||
+        c.schemaname.toLowerCase().includes('sharepoint') ||
+        c.schemaname.toLowerCase().includes('website') ||
+        c.schemaname.toLowerCase().includes('file')
+      )) && 
+      !c.schemaname.toLowerCase().includes('msdyn_appcopilot') &&
+      !c.schemaname.toLowerCase().includes('.agent.')
     );
-    if (knowledgeSources.length > 0) {
-      console.log('Knowledge source details:');
-      knowledgeSources.forEach(ks => {
-        console.log(`${ks.name}:`);
-        if (ks.data) console.log('  data:', ks.data.substring(0, 200) + '...');
-        if (ks.content) console.log('  content:', ks.content.substring(0, 200) + '...');
+    
+    if (potentialKnowledge.length > 0) {
+      console.log('Potential knowledge sources:');
+      potentialKnowledge.forEach(ks => {
+        console.log(`- "${ks.name}" (type: ${ks.componenttype}, schema: ${ks.schemaname})`);
+        if (ks.data) console.log('  data preview:', ks.data.substring(0, 100) + '...');
+        if (ks.content) console.log('  content preview:', ks.content.substring(0, 100) + '...');
       });
     }
   }

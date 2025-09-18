@@ -11,24 +11,72 @@
   ],
   "main": "./dist/extension.js",
   "contributes": {
+    "views": {
+      "agentExplorer": [
+        {
+          "id": "agentExplorerTree",
+          "name": "Environments & Agents",
+          "when": "true"
+        }
+      ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "agentExplorer",
+          "title": "Agent Explorer",
+          "icon": "$(organization)"
+        }
+      ]
+    },
     "commands": [
       {
         "command": "agentExplorer.signIn",
-        "title": "Agent Explorer: Sign In"
+        "title": "Sign In",
+        "icon": "$(sign-in)"
       },
       {
-        "command": "agentExplorer.pickEnvironment",
-        "title": "Agent Explorer: Pick Environment"
+        "command": "agentExplorer.signOut",
+        "title": "Sign Out",
+        "icon": "$(sign-out)"
       },
       {
-        "command": "agentExplorer.listAgents",
-        "title": "Agent Explorer: List Agents"
+        "command": "agentExplorer.refresh",
+        "title": "Refresh",
+        "icon": "$(refresh)"
       },
       {
-        "command": "agentExplorer.showGraph",
-        "title": "Agent Explorer: Show Explorer"
+        "command": "agentExplorer.showAgentDetails",
+        "title": "Show Agent Details",
+        "icon": "$(eye)"
       }
     ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "agentExplorer.signIn",
+          "when": "view == agentExplorerTree && !agentExplorer.signedIn",
+          "group": "navigation"
+        },
+        {
+          "command": "agentExplorer.signOut",
+          "when": "view == agentExplorerTree && agentExplorer.signedIn",
+          "group": "navigation"
+        },
+        {
+          "command": "agentExplorer.refresh",
+          "when": "view == agentExplorerTree && agentExplorer.signedIn",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "agentExplorer.showAgentDetails",
+          "when": "view == agentExplorerTree && viewItem == agent",
+          "group": "inline"
+        }
+      ]
+    },
     "configuration": {
       "title": "Agent Explorer",
       "properties": {

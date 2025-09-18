@@ -1,57 +1,68 @@
 import * as vscode from 'vscode';
-import { MsalAuth } from './auth/msal';
-import { listInstances } from './api/discovery';
-import { listBots, listBotComponents } from './api/dataverse';
+import { AgentExplorerTreeProvider } from './views/treeProvider';
+import { listBotComponents } from './api/dataverse';
 import { buildAgentModel } from './parsers/copilot';
 import { getExplorerHtml } from './webview/html';
 
 export function activate(context: vscode.ExtensionContext) {
-  let msal: MsalAuth | undefined;
-  let envPick: { label: string; apiUrl: string } | undefined;
-  let lastLoaded: { agent: any; rawComponents: any[] } | undefined;
+  // Create tree data provider
+  const treeProvider = new AgentExplorerTreeProvider(context);
+  
+  // Register tree view
+  vscode.window.createTreeView('agentExplorerTree', {
+    treeDataProvider: treeProvider,
+    showCollapseAll: true
+  });
 
-  async function signIn() {
-    const clientId = vscode.workspace.getConfiguration('agentExplorer.aad').get<string>('clientId') || '';
-    if (!clientId) return vscode.window.showErrorMessage('Set agentExplorer.aad.clientId in Settings.');
-    msal = new MsalAuth(clientId);
-    await msal.getTokenForResource('https://globaldisco.crm.dynamics.com');
-    vscode.window.showInformationMessage('Signed in successfully.');
-  }
+  // Register commands
+  const signInCommand = vscode.commands.registerCommand('agentExplorer.signIn', () => {
+    treeProvider.signIn();
+  });
 
-  async function pickEnvironment() {
-    if (!msal) return vscode.window.showErrorMessage('Run: Agent Explorer: Sign In');
-    const discoToken = await msal.getTokenForResource('https://globaldisco.crm.dynamics.com');
-    const instances = await listInstances(discoToken);
-    const pick = await vscode.window.showQuickPick(instances.map(i => ({
-      label: i.FriendlyName || i.UrlName, apiUrl: i.ApiUrl
-    })), { placeHolder: 'Select Dataverse environment' });
-    if (pick) envPick = pick;
-  }
+  const signOutCommand = vscode.commands.registerCommand('agentExplorer.signOut', () => {
+    treeProvider.signOut();
+  });
 
-  async function listAgentsCmd() {
-    if (!msal || !envPick) return vscode.window.showErrorMessage('Sign in and pick environment first.');
-    const token = await msal.getTokenForResource(envPick.apiUrl);
-    const bots = await listBots(envPick.apiUrl, token);
-    const pick = await vscode.window.showQuickPick(bots.map(b => ({ label: b.name, id: b.botid })), { placeHolder: 'Select an agent' });
-    if (!pick) return;
-    const comps = await listBotComponents(envPick.apiUrl, token, pick.id);
-    lastLoaded = buildAgentModel(envPick.apiUrl, { botid: pick.id, name: pick.label }, comps);
-    vscode.window.showInformationMessage(`Loaded ${pick.label} (${comps.length} components).`);
-    await showExplorer();
-  }
+  const refreshCommand = vscode.commands.registerCommand('agentExplorer.refresh', () => {
+    treeProvider.refresh();
+  });
 
-  async function showExplorer() {
-    if (!lastLoaded) return vscode.window.showInformationMessage('Load an agent first.');
-    const panel = vscode.window.createWebviewPanel('agentExplorer', 'Agent Explorer', vscode.ViewColumn.Active, { enableScripts: true });
-    panel.webview.html = getExplorerHtml(panel);
-    panel.webview.postMessage({ agent: lastLoaded.agent, raw: lastLoaded.rawComponents });
-  }
+  const showAgentDetailsCommand = vscode.commands.registerCommand('agentExplorer.showAgentDetails', (agentItem) => {
+    treeProvider.showAgentDetails(agentItem);
+  });
+
+  // Internal command for showing agent details (called from tree provider)
+  const showAgentDetailsInternalCommand = vscode.commands.registerCommand('agentExplorer.showAgentDetailsInternal', 
+    async (params: { msal: any, environment: any, agent: any }) => {
+      try {
+        const token = await params.msal.getTokenForResource(params.environment.apiUrl);
+        const components = await listBotComponents(params.environment.apiUrl, token, params.agent.id);
+        const agentModel = buildAgentModel(params.environment.apiUrl, params.agent, components);
+        
+        const panel = vscode.window.createWebviewPanel(
+          'agentExplorer', 
+          `Agent: ${params.agent.name}`, 
+          vscode.ViewColumn.Active, 
+          { enableScripts: true }
+        );
+        
+        panel.webview.html = getExplorerHtml(panel);
+        panel.webview.postMessage({ 
+          agent: agentModel.agent, 
+          raw: agentModel.rawComponents 
+        });
+      } catch (error) {
+        vscode.window.showErrorMessage(`Failed to load agent details: ${error}`);
+      }
+    }
+  );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('agentExplorer.signIn', signIn),
-    vscode.commands.registerCommand('agentExplorer.pickEnvironment', pickEnvironment),
-    vscode.commands.registerCommand('agentExplorer.listAgents', listAgentsCmd),
-    vscode.commands.registerCommand('agentExplorer.showGraph', showExplorer),
+    signInCommand,
+    signOutCommand, 
+    refreshCommand,
+    showAgentDetailsCommand,
+    showAgentDetailsInternalCommand
   );
 }
 

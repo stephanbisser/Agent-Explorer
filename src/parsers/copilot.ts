@@ -17,6 +17,9 @@ export function buildAgentModel(
     const componentType = c.componenttype;
     const name = (c.name || '').toLowerCase();
     
+    // Log all components for debugging
+    console.log(`Component: "${c.name}" - Type: ${componentType} - Schema: ${schema}`);
+    
     // Skip agent definition components entirely
     if (schema.includes('msdyn_appcopilot') || 
         schema.includes('.agent.') || 
@@ -45,7 +48,11 @@ export function buildAgentModel(
       return 'action';
     }
     
-    if (schema.includes('.channel')) {
+    // Expand channel detection patterns
+    if (schema.includes('.channel') || schema.includes('channel') ||
+        componentType === 30 || componentType === 31 || // common channel types
+        schema.includes('teams') || schema.includes('webchat') || 
+        schema.includes('facebook') || schema.includes('slack')) {
       return 'channel';
     }
     

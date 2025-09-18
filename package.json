@@ -49,6 +49,11 @@
         "command": "agentExplorer.showAgentDetails",
         "title": "Show Agent Details",
         "icon": "$(eye)"
+      },
+      {
+        "command": "agentExplorer.showDependencyGraph",
+        "title": "Show Dialog Dependencies",
+        "icon": "$(graph)"
       }
     ],
     "menus": {
@@ -72,6 +77,11 @@
       "view/item/context": [
         {
           "command": "agentExplorer.showAgentDetails",
+          "when": "view == agentExplorerTree && viewItem == agent",
+          "group": "inline"
+        },
+        {
+          "command": "agentExplorer.showDependencyGraph",
           "when": "view == agentExplorerTree && viewItem == agent",
           "group": "inline"
         }

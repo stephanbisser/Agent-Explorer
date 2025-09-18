@@ -132,6 +132,20 @@ export class AgentExplorerTreeProvider implements vscode.TreeDataProvider<TreeIt
       agent: agent.agent
     });
   }
+
+  async showDependencyGraph(agent: AgentItem): Promise<void> {
+    if (!this.msal) return;
+
+    const environment = this.environments.find(env => env.id === agent.agent.environmentId);
+    if (!environment) return;
+
+    // This will trigger the dependency graph logic
+    vscode.commands.executeCommand('agentExplorer.showDependencyGraphInternal', {
+      msal: this.msal,
+      environment: environment,
+      agent: agent.agent
+    });
+  }
 }
 
 abstract class TreeItem extends vscode.TreeItem {}

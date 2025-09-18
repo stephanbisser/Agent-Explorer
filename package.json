@@ -1,0 +1,75 @@
+{
+  "name": "agent-explorer",
+  "displayName": "Agent Explorer",
+  "description": "Explore and visualize agents built in Copilot Studio",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "agentExplorer.signIn",
+        "title": "Agent Explorer: Sign In"
+      },
+      {
+        "command": "agentExplorer.pickEnvironment",
+        "title": "Agent Explorer: Pick Environment"
+      },
+      {
+        "command": "agentExplorer.listAgents",
+        "title": "Agent Explorer: List Agents"
+      },
+      {
+        "command": "agentExplorer.showGraph",
+        "title": "Agent Explorer: Show Explorer"
+      }
+    ],
+    "configuration": {
+      "title": "Agent Explorer",
+      "properties": {
+        "agentExplorer.aad.clientId": {
+          "type": "string",
+          "default": "",
+          "description": "Azure AD application (client) ID used to sign in to Dataverse (Public client app; supports device code flow)."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "build": "npm-run-all build:ext",
+    "build:ext": "node esbuild.js",
+    "watch": "node esbuild.js --watch",
+    "compile": "npm run build",
+    "watch:esbuild": "node esbuild.js --watch",
+    "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
+    "package": "npm run check-types && npm run lint && node esbuild.js --production",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "npm run compile-tests && npm run compile && npm run lint",
+    "check-types": "tsc --noEmit",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "22.x",
+    "@types/vscode": "^1.90.0",
+    "@typescript-eslint/eslint-plugin": "^8.42.0",
+    "@typescript-eslint/parser": "^8.42.0",
+    "@vscode/test-cli": "^0.0.11",
+    "@vscode/test-electron": "^2.5.2",
+    "esbuild": "^0.25.9",
+    "eslint": "^9.34.0",
+    "npm-run-all": "^4.1.5",
+    "typescript": "^5.9.2"
+  },
+  "dependencies": {
+    "@azure/msal-node": "^3.7.4"
+  }
+}

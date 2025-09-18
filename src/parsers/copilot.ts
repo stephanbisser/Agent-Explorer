@@ -11,6 +11,9 @@ export function buildAgentModel(
   const actions: Dependency[] = [];
   const channels: Dependency[] = [];
   const agents: Dependency[] = [];
+  
+  // Track channel names to avoid duplicates
+  const seenChannels = new Set<string>();
 
   function classifyComponent(c: any) {
     const schema = (c.schemaname || '').toLowerCase();
@@ -48,11 +51,32 @@ export function buildAgentModel(
       return 'action';
     }
     
-    // Expand channel detection patterns
+    // Expand channel detection patterns - be more aggressive
     if (schema.includes('.channel') || schema.includes('channel') ||
-        componentType === 30 || componentType === 31 || // common channel types
+        // Common channel component types
+        componentType === 30 || componentType === 31 || componentType === 32 || componentType === 5 || componentType === 999 ||
+        // Our extracted channel types
+        componentType === 998 || componentType === 997 || componentType === 996 || componentType === 995 ||
+        // Channel platform names
         schema.includes('teams') || schema.includes('webchat') || 
-        schema.includes('facebook') || schema.includes('slack')) {
+        schema.includes('facebook') || schema.includes('slack') ||
+        schema.includes('telegram') || schema.includes('twilio') ||
+        schema.includes('directline') || schema.includes('cortana') ||
+        schema.includes('skype') || schema.includes('email') ||
+        schema.includes('sms') || schema.includes('alexa') ||
+        // Channel-related keywords
+        name.includes('channel') || name.includes('teams') || 
+        name.includes('webchat') || name.includes('facebook') ||
+        name.includes('slack') || name.includes('telegram') ||
+        name.includes('directline') || name.includes('sms') ||
+        name.includes('copilot chat') || name.includes('microsoft teams') ||
+        // Publication/deployment related
+        schema.includes('publish') || schema.includes('deploy') ||
+        name.includes('publish') || name.includes('deploy') ||
+        // Specific schemas we extract
+        schema.includes('config.channel') || schema.includes('sync.channel') ||
+        schema.includes('teams.app') || schema.includes('copilot.chat')) {
+      console.log(`🎯 CLASSIFIED AS CHANNEL: "${c.name}" (Type: ${componentType}, Schema: ${schema})`);
       return 'channel';
     }
     
@@ -62,7 +86,7 @@ export function buildAgentModel(
     
     // Log unclassified for debugging - but exclude the main agent components
     if (!schema.includes('msdyn_appcopilot') && !schema.includes('.agent.') && !name.includes('copilot')) {
-      console.log(`Unclassified component: type=${componentType}, schema=${schema}, name=${c.name}`);
+      console.log(`❓ UNCLASSIFIED: "${c.name}" (Type: ${componentType}, Schema: ${schema})`);
     }
     
     return 'unknown';
@@ -120,12 +144,49 @@ export function buildAgentModel(
     } else if (type === 'action') {
       actions.push({ kind: 'action', type: 'plugin', ref: c.name });
     } else if (type === 'channel') {
-      channels.push({ kind: 'channel', type: 'unknown', ref: c.name });
+      // Avoid duplicates - normalize the channel name for comparison
+      const normalizedName = c.name.toLowerCase().trim();
+      if (!seenChannels.has(normalizedName)) {
+        seenChannels.add(normalizedName);
+        channels.push({ kind: 'channel', type: 'unknown', ref: c.name });
+        console.log(`✅ Added unique channel: "${c.name}"`);
+      } else {
+        console.log(`🔄 Skipped duplicate channel: "${c.name}"`);
+      }
     } else if (type === 'agent') {
       agents.push({ kind: 'agent', type: 'handoff', ref: c.name });
     }
   }
 
-  const agent: Agent = { id: bot.botid, name: bot.name, environmentUrl: envUrl, topics, knowledge, actions, channels, agents };
+  // Final deduplication pass - remove channels with very similar names
+  const finalChannels: Dependency[] = [];
+  const normalizedChannelNames = new Set<string>();
+  
+  for (const channel of channels) {
+    // Create a normalized version for comparison
+    const normalized = channel.ref.toLowerCase()
+      .replace(/\s+/g, '')
+      .replace(/microsoft/g, 'ms')
+      .replace(/messenger/g, 'msg');
+    
+    if (!normalizedChannelNames.has(normalized)) {
+      normalizedChannelNames.add(normalized);
+      finalChannels.push(channel);
+      console.log(`✅ Final channel kept: "${channel.ref}"`);
+    } else {
+      console.log(`🔄 Final dedup removed: "${channel.ref}"`);
+    }
+  }
+
+  const agent: Agent = { 
+    id: bot.botid, 
+    name: bot.name, 
+    environmentUrl: envUrl, 
+    topics, 
+    knowledge, 
+    actions, 
+    channels: finalChannels, // Use deduplicated channels
+    agents 
+  };
   return { agent, rawComponents: components };
 }

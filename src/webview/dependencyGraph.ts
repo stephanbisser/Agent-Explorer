@@ -72,44 +72,131 @@ body {
   height: calc(100vh - 60px);
   overflow: auto;
   padding: 20px;
+  background: radial-gradient(circle at 20% 50%, rgba(0, 122, 204, 0.05) 0%, transparent 50%), 
+              radial-gradient(circle at 80% 20%, rgba(255, 107, 107, 0.05) 0%, transparent 50%),
+              radial-gradient(circle at 40% 80%, rgba(78, 205, 196, 0.05) 0%, transparent 50%);
+}
+
+.tooltip {
+  position: absolute;
+  background: var(--vscode-editorHoverWidget-background);
+  border: 1px solid var(--vscode-editorHoverWidget-border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 12px;
+  z-index: 1000;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+}
+
+.tooltip.show {
+  opacity: 1;
+}
+
+.minimap {
+  position: absolute;
+  top: 80px;
+  left: 20px;
+  width: 150px;
+  height: 100px;
+  background: var(--vscode-sideBar-background);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 6px;
+  z-index: 100;
+  opacity: 0.8;
+  overflow: hidden;
+}
+
+.minimap-node {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: var(--vscode-focusBorder);
+  border-radius: 2px;
 }
 
 .node {
   position: absolute;
-  background: var(--vscode-button-background);
+  background: linear-gradient(135deg, var(--vscode-button-background) 0%, var(--vscode-button-hoverBackground) 100%);
   color: var(--vscode-button-foreground);
   border: 2px solid var(--vscode-button-border);
-  border-radius: 8px;
-  padding: 12px 16px;
-  min-width: 120px;
+  border-radius: 12px;
+  padding: 16px 20px;
+  min-width: 160px;
+  max-width: 220px;
   text-align: center;
   cursor: move;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-  font-size: 12px;
-  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  font-size: 13px;
+  transition: all 0.3s ease;
   z-index: 10;
+  user-select: none;
+  backdrop-filter: blur(8px);
 }
 
 .node:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+  border-color: var(--vscode-focusBorder);
 }
 
 .node.selected {
   border-color: var(--vscode-focusBorder);
-  box-shadow: 0 0 0 2px var(--vscode-focusBorder);
+  box-shadow: 0 0 0 3px rgba(0, 122, 204, 0.3);
+  transform: scale(1.05);
+}
+
+.node.root-node {
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  border-color: #28a745;
+  color: white;
+}
+
+.node.leaf-node {
+  background: linear-gradient(135deg, #6c757d 0%, #adb5bd 100%);
+  border-color: #6c757d;
+  color: white;
 }
 
 .node-name {
   font-weight: 600;
-  margin-bottom: 4px;
+  margin-bottom: 8px;
+  font-size: 14px;
+  line-height: 1.2;
+  word-wrap: break-word;
 }
 
 .node-triggers {
+  font-size: 11px;
+  opacity: 0.9;
+  max-height: 60px;
+  overflow: hidden;
+  line-height: 1.3;
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(0, 0, 0, 0.1);
+  padding: 6px 8px;
+  border-radius: 6px;
+  margin-top: 8px;
+  text-overflow: ellipsis;
+}
+
+.node-stats {
   font-size: 10px;
   opacity: 0.8;
-  max-height: 40px;
-  overflow: hidden;
+  margin-top: 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.node-stat {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-weight: 500;
 }
 
 .edge {
@@ -119,46 +206,86 @@ body {
 }
 
 .edge-line {
-  stroke-width: 2;
+  stroke-width: 3;
   fill: none;
   marker-end: url(#arrowhead);
+  opacity: 0.8;
+  transition: all 0.3s ease;
+}
+
+.edge-line:hover {
+  stroke-width: 4;
+  opacity: 1;
 }
 
 .edge-call {
   stroke: #007ACC;
+  stroke-dasharray: none;
 }
 
 .edge-redirect {
   stroke: #FF6B6B;
+  stroke-dasharray: 8,4;
 }
 
 .edge-handoff {
   stroke: #4ECDC4;
+  stroke-dasharray: 12,6;
 }
 
 .edge-label {
-  font-size: 10px;
+  font-size: 11px;
   fill: var(--vscode-editor-foreground);
   text-anchor: middle;
+  font-weight: 600;
+  background: var(--vscode-editor-background);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.edge-label-bg {
+  fill: var(--vscode-editor-background);
+  stroke: var(--vscode-panel-border);
+  stroke-width: 1;
+  rx: 4;
+  ry: 4;
 }
 
 .legend {
   position: absolute;
-  top: 20px;
+  top: 80px;
   right: 20px;
   background: var(--vscode-sideBar-background);
   border: 1px solid var(--vscode-panel-border);
-  border-radius: 6px;
-  padding: 16px;
+  border-radius: 8px;
+  padding: 20px;
   font-size: 12px;
   z-index: 100;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  backdrop-filter: blur(8px);
+  max-width: 200px;
+}
+
+.legend h3 {
+  margin: 0 0 16px 0; 
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--vscode-editor-foreground);
+  border-bottom: 1px solid var(--vscode-panel-border);
+  padding-bottom: 8px;
 }
 
 .legend-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding: 4px 0;
+  transition: opacity 0.2s ease;
+}
+
+.legend-item:hover {
+  opacity: 0.7;
 }
 
 .legend-item:last-child {
@@ -166,9 +293,27 @@ body {
 }
 
 .legend-color {
-  width: 16px;
-  height: 3px;
+  width: 20px;
+  height: 4px;
   border-radius: 2px;
+  position: relative;
+}
+
+.legend-color.dashed {
+  background: repeating-linear-gradient(
+    90deg,
+    transparent,
+    transparent 2px,
+    currentColor 2px,
+    currentColor 6px
+  );
+}
+
+.legend-description {
+  font-size: 11px;
+  opacity: 0.8;
+  margin-left: 30px;
+  margin-top: 2px;
 }
 
 .stats {
@@ -177,10 +322,51 @@ body {
   left: 20px;
   background: var(--vscode-sideBar-background);
   border: 1px solid var(--vscode-panel-border);
-  border-radius: 6px;
-  padding: 16px;
+  border-radius: 8px;
+  padding: 20px;
   font-size: 12px;
   z-index: 100;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  backdrop-filter: blur(8px);
+  min-width: 180px;
+}
+
+.stats h3 {
+  margin: 0 0 12px 0; 
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--vscode-editor-foreground);
+  border-bottom: 1px solid var(--vscode-panel-border);
+  padding-bottom: 8px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.stat-item {
+  text-align: center;
+  padding: 8px;
+  background: var(--vscode-input-background);
+  border-radius: 6px;
+  border: 1px solid var(--vscode-input-border);
+}
+
+.stat-number {
+  display: block;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--vscode-focusBorder);
+  margin-bottom: 4px;
+}
+
+.stat-label {
+  font-size: 10px;
+  opacity: 0.8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .empty-state {
@@ -214,11 +400,16 @@ body {
 }
 
 .dependency-item {
-  padding: 12px 20px;
+  padding: 16px 20px;
   border-bottom: 1px solid var(--vscode-panel-border);
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
+  transition: background-color 0.2s ease;
+}
+
+.dependency-item:hover {
+  background: var(--vscode-list-hoverBackground);
 }
 
 .dependency-item:last-child {
@@ -226,11 +417,14 @@ body {
 }
 
 .dependency-type {
-  padding: 4px 8px;
-  border-radius: 4px;
+  padding: 6px 12px;
+  border-radius: 6px;
   font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
+  letter-spacing: 0.5px;
+  min-width: 60px;
+  text-align: center;
 }
 
 .dependency-type.call {
@@ -250,16 +444,31 @@ body {
 
 .dependency-details {
   flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 16px;
 }
 
-.dependency-from {
-  font-weight: 500;
+.dependency-from, .dependency-to {
+  flex: 1;
+}
+
+.dependency-from strong, .dependency-to strong {
+  display: block;
   margin-bottom: 4px;
+  color: var(--vscode-editor-foreground);
 }
 
-.dependency-to {
-  font-size: 12px;
+.dependency-triggers {
+  font-size: 11px;
   color: var(--vscode-descriptionForeground);
+  font-style: italic;
+}
+
+.dependency-arrow {
+  font-size: 18px;
+  color: var(--vscode-focusBorder);
+  font-weight: bold;
 }
 </style>
 </head><body>
@@ -269,8 +478,9 @@ body {
       Dialog Dependencies - ${agentName}
     </h1>
     <div class="controls">
-      <button class="control-button active" onclick="showView('graph')">Graph View</button>
-      <button class="control-button" onclick="showView('list')">List View</button>
+      <button class="control-button active" onclick="showView('graph')">📊 Graph View</button>
+      <button class="control-button" onclick="showView('list')">📋 List View</button>
+      <button class="control-button" onclick="resetZoom()">🔍 Reset Zoom</button>
     </div>
   </div>
   
@@ -316,19 +526,46 @@ body {
       }
     }
     
-    // Simple drag and drop for nodes
+    // Simple drag and drop for nodes with improved handling
+    let isDragging = false;
+    let currentZoom = 1;
+    
+    function resetZoom() {
+      currentZoom = 1;
+      const container = document.getElementById('graph-view');
+      if (container) {
+        container.style.transform = 'scale(' + currentZoom + ')';
+        container.scrollTo(0, 0);
+      }
+    }
+    
+    // Add zoom functionality
+    document.addEventListener('wheel', (e) => {
+      if (e.target.closest('#graph-view') && e.ctrlKey) {
+        e.preventDefault();
+        const delta = e.deltaY > 0 ? -0.1 : 0.1;
+        currentZoom = Math.max(0.3, Math.min(2, currentZoom + delta));
+        const container = document.getElementById('graph-view');
+        if (container) {
+          container.style.transform = 'scale(' + currentZoom + ')';
+        }
+      }
+    });
+    
     document.addEventListener('mousedown', (e) => {
       if (e.target.classList.contains('node')) {
         draggedNode = e.target;
+        isDragging = true;
         const rect = draggedNode.getBoundingClientRect();
         dragOffset.x = e.clientX - rect.left;
         dragOffset.y = e.clientY - rect.top;
+        draggedNode.style.cursor = 'grabbing';
         e.preventDefault();
       }
     });
     
     document.addEventListener('mousemove', (e) => {
-      if (draggedNode) {
+      if (draggedNode && isDragging) {
         const container = draggedNode.parentElement;
         const containerRect = container.getBoundingClientRect();
         const x = e.clientX - containerRect.left - dragOffset.x;
@@ -342,7 +579,11 @@ body {
     });
     
     document.addEventListener('mouseup', () => {
-      draggedNode = null;
+      if (draggedNode) {
+        draggedNode.style.cursor = 'move';
+        draggedNode = null;
+        isDragging = false;
+      }
     });
     
     function updateEdges() {
@@ -360,60 +601,107 @@ body {
 function generateGraphView(graph: DialogGraph): string {
   if (graph.nodes.length === 0) return '';
   
-  // Simple layout algorithm - arrange nodes in a grid
-  const cols = Math.ceil(Math.sqrt(graph.nodes.length));
-  const nodeWidth = 140;
-  const nodeHeight = 80;
-  const spacing = 60;
+  // Better layout algorithm - arrange nodes with improved spacing and hierarchy
+  const cols = Math.min(4, Math.ceil(Math.sqrt(graph.nodes.length)));
+  const nodeWidth = 180;
+  const nodeHeight = 120;
+  const spacingX = 100;
+  const spacingY = 80;
+  
+  // Categorize nodes
+  const rootNodes = graph.nodes.filter(node => 
+    !graph.edges.some(edge => edge.to === node.id)
+  );
+  const leafNodes = graph.nodes.filter(node => 
+    !graph.edges.some(edge => edge.from === node.id)
+  );
   
   let nodeHtml = '';
   graph.nodes.forEach((node, index) => {
     const col = index % cols;
     const row = Math.floor(index / cols);
-    const x = 50 + col * (nodeWidth + spacing);
-    const y = 50 + row * (nodeHeight + spacing);
+    const x = 80 + col * (nodeWidth + spacingX);
+    const y = 120 + row * (nodeHeight + spacingY);
+    
+    const isRoot = rootNodes.includes(node);
+    const isLeaf = leafNodes.includes(node);
+    const nodeClass = isRoot ? 'root-node' : isLeaf ? 'leaf-node' : '';
+    
+    const incomingEdges = graph.edges.filter(e => e.to === node.id).length;
+    const outgoingEdges = graph.edges.filter(e => e.from === node.id).length;
+    
+    const displayTriggers = node.triggers.length > 0 
+      ? node.triggers.slice(0, 3).join(', ') + (node.triggers.length > 3 ? '...' : '')
+      : 'No triggers';
     
     nodeHtml += `
-      <div class="node" data-id="${node.id}" style="left: ${x}px; top: ${y}px;">
+      <div class="node ${nodeClass}" data-id="${node.id}" 
+           style="left: ${x}px; top: ${y}px;" 
+           title="Dialog: ${node.name}${node.triggers.length > 0 ? '\nTriggers: ' + node.triggers.join(', ') : ''}">
         <div class="node-name">${node.name}</div>
-        <div class="node-triggers">${node.triggers.slice(0, 2).join(', ')}</div>
+        <div class="node-triggers">${displayTriggers}</div>
+        <div class="node-stats">
+          <div class="node-stat" title="Incoming dependencies">⬅️ ${incomingEdges}</div>
+          <div class="node-stat" title="Outgoing dependencies">➡️ ${outgoingEdges}</div>
+        </div>
       </div>
     `;
   });
 
-  // Create SVG for edges
-  const svgWidth = Math.max(800, (cols * (nodeWidth + spacing)) + 100);
-  const svgHeight = Math.max(600, (Math.ceil(graph.nodes.length / cols) * (nodeHeight + spacing)) + 100);
+  // Create enhanced SVG for edges with better curves
+  const svgWidth = Math.max(1000, (cols * (nodeWidth + spacingX)) + 200);
+  const svgHeight = Math.max(700, (Math.ceil(graph.nodes.length / cols) * (nodeHeight + spacingY)) + 200);
   
   let edgeHtml = `
     <svg class="edge" width="${svgWidth}" height="${svgHeight}" style="position: absolute; top: 0; left: 0;">
       <defs>
-        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-          <polygon points="0 0, 10 3.5, 0 7" fill="var(--vscode-editor-foreground)" />
+        <marker id="arrowhead-call" markerWidth="12" markerHeight="8" refX="11" refY="4" orient="auto">
+          <polygon points="0 0, 12 4, 0 8" fill="#007ACC" />
+        </marker>
+        <marker id="arrowhead-redirect" markerWidth="12" markerHeight="8" refX="11" refY="4" orient="auto">
+          <polygon points="0 0, 12 4, 0 8" fill="#FF6B6B" />
+        </marker>
+        <marker id="arrowhead-handoff" markerWidth="12" markerHeight="8" refX="11" refY="4" orient="auto">
+          <polygon points="0 0, 12 4, 0 8" fill="#4ECDC4" />
         </marker>
       </defs>
   `;
   
-  graph.edges.forEach(edge => {
+  graph.edges.forEach((edge, edgeIndex) => {
     const fromIndex = graph.nodes.findIndex(n => n.id === edge.from);
     const toIndex = graph.nodes.findIndex(n => n.id === edge.to);
     
     if (fromIndex >= 0 && toIndex >= 0) {
       const fromCol = fromIndex % cols;
       const fromRow = Math.floor(fromIndex / cols);
-      const fromX = 50 + fromCol * (nodeWidth + spacing) + nodeWidth / 2;
-      const fromY = 50 + fromRow * (nodeHeight + spacing) + nodeHeight / 2;
+      const fromX = 80 + fromCol * (nodeWidth + spacingX) + nodeWidth / 2;
+      const fromY = 120 + fromRow * (nodeHeight + spacingY) + nodeHeight / 2;
       
       const toCol = toIndex % cols;
       const toRow = Math.floor(toIndex / cols);
-      const toX = 50 + toCol * (nodeWidth + spacing) + nodeWidth / 2;
-      const toY = 50 + toRow * (nodeHeight + spacing) + nodeHeight / 2;
+      const toX = 80 + toCol * (nodeWidth + spacingX) + nodeWidth / 2;
+      const toY = 120 + toRow * (nodeHeight + spacingY) + nodeHeight / 2;
+      
+      // Create curved path for better readability
+      const midX = (fromX + toX) / 2;
+      const midY = (fromY + toY) / 2;
+      const controlOffset = 30;
+      
+      const path = `M ${fromX} ${fromY} Q ${midX + controlOffset} ${midY - controlOffset} ${toX} ${toY}`;
+      
+      const labelX = midX;
+      const labelY = midY - 15;
+      const edgeLabel = edge.label || edge.type.toUpperCase();
       
       edgeHtml += `
-        <line x1="${fromX}" y1="${fromY}" x2="${toX}" y2="${toY}" 
-              class="edge-line edge-${edge.type}" />
-        <text x="${(fromX + toX) / 2}" y="${(fromY + toY) / 2}" class="edge-label">
-          ${edge.label || edge.type}
+        <path d="${path}" class="edge-line edge-${edge.type}" 
+              marker-end="url(#arrowhead-${edge.type})" 
+              data-from="${edge.from}" data-to="${edge.to}"/>
+        <rect x="${labelX - 15}" y="${labelY - 8}" width="30" height="16" 
+              class="edge-label-bg" rx="4" ry="4"/>
+        <text x="${labelX}" y="${labelY + 3}" class="edge-label" 
+              title="${edge.type} from ${graph.nodes[fromIndex].name} to ${graph.nodes[toIndex].name}">
+          ${edgeLabel}
         </text>
       `;
     }
@@ -426,25 +714,56 @@ function generateGraphView(graph: DialogGraph): string {
     ${nodeHtml}
     
     <div class="legend">
-      <h3 style="margin: 0 0 12px 0; font-size: 14px;">Edge Types</h3>
+      <h3>Connection Types</h3>
       <div class="legend-item">
         <div class="legend-color" style="background: #007ACC;"></div>
-        <span>Calls</span>
+        <span>Dialog Calls</span>
+        <div class="legend-description">Direct calls to other dialogs</div>
       </div>
       <div class="legend-item">
-        <div class="legend-color" style="background: #FF6B6B;"></div>
+        <div class="legend-color dashed" style="color: #FF6B6B;"></div>
         <span>Redirects</span>
+        <div class="legend-description">Conversation redirections</div>
       </div>
       <div class="legend-item">
-        <div class="legend-color" style="background: #4ECDC4;"></div>
+        <div class="legend-color dashed" style="color: #4ECDC4;"></div>
         <span>Handoffs</span>
+        <div class="legend-description">Agent to agent handoffs</div>
+      </div>
+      <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--vscode-panel-border);">
+        <div class="legend-item">
+          <div class="legend-color" style="background: #28a745;"></div>
+          <span>Entry Points</span>
+          <div class="legend-description">Dialogs with no incoming calls</div>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background: #6c757d;"></div>
+          <span>End Points</span>
+          <div class="legend-description">Dialogs with no outgoing calls</div>
+        </div>
       </div>
     </div>
     
     <div class="stats">
-      <h3 style="margin: 0 0 8px 0; font-size: 14px;">Graph Stats</h3>
-      <div>Dialogs: ${graph.nodes.length}</div>
-      <div>Dependencies: ${graph.edges.length}</div>
+      <h3>Graph Statistics</h3>
+      <div class="stats-grid">
+        <div class="stat-item">
+          <span class="stat-number">${graph.nodes.length}</span>
+          <span class="stat-label">Dialogs</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-number">${graph.edges.length}</span>
+          <span class="stat-label">Connections</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-number">${rootNodes.length}</span>
+          <span class="stat-label">Entry Points</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-number">${leafNodes.length}</span>
+          <span class="stat-label">End Points</span>
+        </div>
+      </div>
     </div>
   `;
 }
@@ -452,31 +771,64 @@ function generateGraphView(graph: DialogGraph): string {
 function generateListView(graph: DialogGraph): string {
   if (graph.edges.length === 0) return '';
   
-  let listHtml = `
-    <div class="dependency-list">
-      <div class="dependency-header">
-        Dialog Dependencies (${graph.edges.length})
-      </div>
-  `;
+  // Group edges by type for better organization
+  const edgesByType = {
+    call: graph.edges.filter(e => e.type === 'call'),
+    redirect: graph.edges.filter(e => e.type === 'redirect'),
+    handoff: graph.edges.filter(e => e.type === 'handoff')
+  };
   
-  graph.edges.forEach(edge => {
-    const fromNode = graph.nodes.find(n => n.id === edge.from);
-    const toNode = graph.nodes.find(n => n.id === edge.to);
+  let listHtml = '';
+  
+  Object.entries(edgesByType).forEach(([type, edges]) => {
+    if (edges.length === 0) return;
     
-    if (fromNode && toNode) {
-      listHtml += `
-        <div class="dependency-item">
-          <div class="dependency-type ${edge.type}">${edge.type}</div>
-          <div class="dependency-details">
-            <div class="dependency-from">${fromNode.name}</div>
-            <div class="dependency-to">→ ${toNode.name}</div>
-          </div>
+    const typeLabels = {
+      call: '📞 Dialog Calls',
+      redirect: '🔄 Redirects', 
+      handoff: '👥 Handoffs'
+    };
+    
+    listHtml += `
+      <div class="dependency-list">
+        <div class="dependency-header">
+          ${typeLabels[type as keyof typeof typeLabels]} (${edges.length})
         </div>
-      `;
-    }
+    `;
+    
+    edges.forEach(edge => {
+      const fromNode = graph.nodes.find(n => n.id === edge.from);
+      const toNode = graph.nodes.find(n => n.id === edge.to);
+      
+      if (fromNode && toNode) {
+        const fromTriggers = fromNode.triggers.length > 0 
+          ? fromNode.triggers.slice(0, 2).join(', ') 
+          : 'No triggers';
+        const toTriggers = toNode.triggers.length > 0 
+          ? toNode.triggers.slice(0, 2).join(', ') 
+          : 'No triggers';
+          
+        listHtml += `
+          <div class="dependency-item">
+            <div class="dependency-type ${edge.type}">${edge.type}</div>
+            <div class="dependency-details">
+              <div class="dependency-from">
+                <strong>${fromNode.name}</strong>
+                <div class="dependency-triggers">Triggers: ${fromTriggers}</div>
+              </div>
+              <div class="dependency-arrow">→</div>
+              <div class="dependency-to">
+                <strong>${toNode.name}</strong>
+                <div class="dependency-triggers">Triggers: ${toTriggers}</div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+    });
+    
+    listHtml += '</div>';
   });
-  
-  listHtml += '</div>';
   
   return listHtml;
 }

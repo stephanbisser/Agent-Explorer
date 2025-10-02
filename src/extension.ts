@@ -53,10 +53,15 @@ export function activate(context: vscode.ExtensionContext) {
         );
         
         panel.webview.html = getExplorerHtml(panel);
-        panel.webview.postMessage({ 
-          agent: agentModel.agent, 
-          raw: agentModel.rawComponents 
-        });
+        
+        // Wait a moment for webview to be ready, then send the data
+        setTimeout(() => {
+          console.log('Sending agent data to webview:', agentModel.agent);
+          panel.webview.postMessage({ 
+            agent: agentModel.agent, 
+            raw: agentModel.rawComponents 
+          });
+        }, 100);
       } catch (error) {
         vscode.window.showErrorMessage(`Failed to load agent details: ${error}`);
       }

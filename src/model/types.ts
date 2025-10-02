@@ -1,6 +1,7 @@
 export interface Agent {
   id: string; name: string; environmentUrl: string;
   topics: Topic[]; knowledge: Dependency[]; actions: Dependency[]; channels: Dependency[]; agents: Dependency[];
+  instructions?: string; // Agent instructions from Copilot Studio
 }
 export interface Topic {
   id: string; name: string; triggers: string[]; variables: string[]; edges: Edge[]; uses: Dependency[];

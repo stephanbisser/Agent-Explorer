@@ -11,6 +11,7 @@ export function buildAgentModel(
   const actions: Dependency[] = [];
   const channels: Dependency[] = [];
   const agents: Dependency[] = [];
+  let instructions: string | undefined = undefined;
   
   // Track channel names to avoid duplicates
   const seenChannels = new Set<string>();
@@ -124,6 +125,69 @@ export function buildAgentModel(
   }
 
   for (const c of components) {
+    // Check for bot instructions - try multiple possible sources
+    if (c.name === '__BOT_INSTRUCTIONS__' && c.content) {
+      instructions = c.content;
+      const instructionsText = String(instructions);
+      const preview = instructionsText.length > 100 ? instructionsText.substring(0, 100) + '...' : instructionsText;
+      console.log(`✅ Extracted agent instructions from special component: ${preview}`);
+      continue;
+    }
+    
+    // Check for GptComponentMetadata in component data (YAML format)
+    if (!instructions && c.data && typeof c.data === 'string') {
+      // Check if this is GptComponentMetadata
+      if (c.data.includes('kind: GptComponentMetadata') || c.data.includes('kind:GptComponentMetadata')) {
+        console.log(`🎯 Found GptComponentMetadata component: "${c.name}"`);
+        
+        // Parse YAML-like format to extract instructions
+        const lines = c.data.split('\n');
+        let inInstructions = false;
+        let instructionLines: string[] = [];
+        
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i];
+          if (line.trim().startsWith('instructions:')) {
+            inInstructions = true;
+            // Check if instructions are on the same line
+            const sameLine = line.substring(line.indexOf('instructions:') + 13).trim();
+            if (sameLine) {
+              instructionLines.push(sameLine);
+            }
+          } else if (inInstructions) {
+            // If line starts with another key, we're done with instructions
+            if (line.match(/^[a-zA-Z]/)) {
+              break;
+            }
+            // Otherwise it's part of instructions (indented)
+            instructionLines.push(line);
+          }
+        }
+        
+        if (instructionLines.length > 0) {
+          instructions = instructionLines.join('\n').trim();
+          console.log(`✅ Extracted instructions from GptComponentMetadata`);
+          console.log(`📝 Instructions preview:`, instructions.substring(0, 150) + '...');
+          continue;
+        }
+      }
+    }
+    
+    // Check for instructions in component data (JSON format)
+    const schema = (c.schemaname || '').toLowerCase();
+    if (!instructions && (schema.includes('copilot') || schema.includes('agent')) && c.data) {
+      try {
+        const data = typeof c.data === 'string' ? JSON.parse(c.data) : c.data;
+        if (data.instructions || data.systemInstructions || data.systemPrompt) {
+          instructions = data.instructions || data.systemInstructions || data.systemPrompt;
+          console.log(`✅ Found instructions in component "${c.name}" (${c.schemaname})`);
+          console.log(`📝 Instructions preview:`, String(instructions).substring(0, 100));
+        }
+      } catch (e) {
+        // Not JSON or failed to parse
+      }
+    }
+    
     const type = classifyComponent(c);
     
     // Skip agent-related components entirely
@@ -186,7 +250,8 @@ export function buildAgentModel(
     knowledge, 
     actions, 
     channels: finalChannels, // Use deduplicated channels
-    agents 
+    agents,
+    instructions // Include agent instructions if available
   };
   return { agent, rawComponents: components };
 }

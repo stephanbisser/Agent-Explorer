@@ -56,6 +56,21 @@ body {
   margin-bottom: 32px;
 }
 
+.instructions-display {
+  background: var(--vscode-textCodeBlock-background);
+  border: 1px solid var(--vscode-input-border);
+  border-radius: 6px;
+  padding: 16px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  font-family: var(--vscode-editor-font-family);
+  font-size: 13px;
+  line-height: 1.6;
+  max-height: 400px;
+  overflow-y: auto;
+  color: var(--vscode-editor-foreground);
+}
+
 .stats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -270,6 +285,12 @@ body {
     
     window.addEventListener('message', (e) => {
       const { agent, raw } = e.data;
+      console.log('Agent object received:', agent);
+      console.log('Agent has instructions:', !!agent.instructions);
+      if (agent.instructions) {
+        console.log('Instructions content:', agent.instructions.substring(0, 200));
+      }
+      
       const titleEl = document.getElementById('agent-title');
       const contentEl = document.getElementById('content');
       
@@ -298,6 +319,19 @@ body {
         </div>
         
         <div class="sections">
+          \${agent.instructions ? \`
+          <div class="section">
+            <div class="section-header">
+              <div class="section-icon">📋</div>
+              <h3 class="section-title">Instructions</h3>
+              <span class="section-count">1</span>
+            </div>
+            <div class="section-content">
+              <div class="instructions-display">\${agent.instructions}</div>
+            </div>
+          </div>
+          \` : ''}
+          
           <div class="section">
             <div class="section-header">
               <div class="section-icon">💬</div>
